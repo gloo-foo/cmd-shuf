@@ -4,15 +4,16 @@ import (
 	"slices"
 	"testing"
 
-	shuf "github.com/gloo-foo/cmd-shuf/alias"
 	"github.com/gloo-foo/testable"
+
+	shuf "github.com/gloo-foo/cmd-shuf/alias"
 )
 
 // The alias package re-exports the constructor and flag types under unprefixed
 // names. A mis-wired re-export (Count bound to Seed, Echo bound to Range, Shuf
 // bound to the wrong function) compiles cleanly, so only behavior can prove the
 // wiring. Each test exercises one re-export under a fixed seed and asserts the
-// exact GNU shuf permutation it must produce.
+// exact deterministic permutation it must produce.
 
 func assertLines(t *testing.T, got, want []string) {
 	t.Helper()
@@ -22,12 +23,12 @@ func assertLines(t *testing.T, got, want []string) {
 }
 
 func TestAlias_ShufPermutesInput(t *testing.T) {
-	// Shuf re-exports the constructor; seed 42 over a..e is [c d e a b].
+	// Shuf re-exports the constructor; seed 42 over a..e is [c b e d a].
 	lines, err := testable.TestLines(shuf.Shuf(shuf.Seed(42)), "a\nb\nc\nd\ne\n")
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertLines(t, lines, []string{"c", "d", "e", "a", "b"})
+	assertLines(t, lines, []string{"c", "b", "e", "d", "a"})
 }
 
 func TestAlias_SeedIsDeterministic(t *testing.T) {
@@ -44,21 +45,21 @@ func TestAlias_SeedIsDeterministic(t *testing.T) {
 }
 
 func TestAlias_CountCapsOutput(t *testing.T) {
-	// Count must bind to ShufCount (-n): the first 3 of [c d e a b].
+	// Count must bind to ShufCount (-n): the first 3 of [c b e d a].
 	lines, err := testable.TestLines(shuf.Shuf(shuf.Count(3), shuf.Seed(42)), "a\nb\nc\nd\ne\n")
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertLines(t, lines, []string{"c", "d", "e"})
+	assertLines(t, lines, []string{"c", "b", "e"})
 }
 
 func TestAlias_RangeShufflesIntegers(t *testing.T) {
-	// Range must bind to ShufRange (-i): seed 42 over 1..5 is [3 4 5 1 2].
+	// Range must bind to ShufRange (-i): seed 42 over 1..5 is [3 2 5 4 1].
 	lines, err := testable.TestLines(shuf.Shuf(shuf.Range(1, 5), shuf.Seed(42)), "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertLines(t, lines, []string{"3", "4", "5", "1", "2"})
+	assertLines(t, lines, []string{"3", "2", "5", "4", "1"})
 }
 
 func TestAlias_EchoShufflesArgs(t *testing.T) {
@@ -67,5 +68,5 @@ func TestAlias_EchoShufflesArgs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertLines(t, lines, []string{"gamma", "alpha", "beta"})
+	assertLines(t, lines, []string{"alpha", "gamma", "beta"})
 }

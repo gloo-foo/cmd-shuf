@@ -3,8 +3,9 @@ package shuf_test
 import (
 	"fmt"
 
-	command "github.com/gloo-foo/cmd-shuf"
 	"github.com/gloo-foo/testable"
+
+	command "github.com/gloo-foo/cmd-shuf"
 )
 
 func ExampleShuf_basic() {
@@ -16,5 +17,5 @@ func ExampleShuf_basic() {
 	fmt.Print(output)
 	// Output:
 	// 3
-	// 4
+	// 2
 }

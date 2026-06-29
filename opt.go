@@ -1,5 +1,7 @@
 package command
 
+import gloo "github.com/gloo-foo/framework"
+
 // ShufCount sets the maximum number of output lines (-n flag).
 type ShufCount int
 
@@ -10,7 +12,7 @@ type ShufSeed int64
 type shufRangeFlag struct{ lo, hi int }
 
 // ShufRange generates integers from lo to hi (inclusive), shuffled.
-func ShufRange(lo, hi int) shufRangeFlag { return shufRangeFlag{lo: lo, hi: hi} }
+func ShufRange(lo, hi int) gloo.Switch[flags] { return shufRangeFlag{lo: lo, hi: hi} }
 
 func (f shufRangeFlag) Configure(flags *flags) { flags.inputRange = &f }
 
@@ -18,7 +20,7 @@ func (f shufRangeFlag) Configure(flags *flags) { flags.inputRange = &f }
 type shufEchoFlag struct{ args []string }
 
 // ShufEcho treats the given arguments as input lines to shuffle.
-func ShufEcho(args ...string) shufEchoFlag { return shufEchoFlag{args: args} }
+func ShufEcho(args ...string) gloo.Switch[flags] { return shufEchoFlag{args: args} }
 
 func (f shufEchoFlag) Configure(flags *flags) { flags.echo = &f }
 
@@ -39,11 +41,11 @@ func (s srcOption) Configure(flags *flags) { flags.source = s.factory }
 // flags holds the parsed shuf options. source defaults to defaultShuffler and is
 // overridden only by injection in tests.
 type flags struct {
-	count      ShufCount
 	seed       *int64
 	inputRange *shufRangeFlag
 	echo       *shufEchoFlag
 	source     shufflerFor
+	count      ShufCount
 }
 
 func (c ShufCount) Configure(f *flags) { f.count = c }

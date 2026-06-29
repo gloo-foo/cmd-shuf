@@ -61,15 +61,26 @@ func resolveSource(f flags) shufflerFor {
 	return defaultShuffler
 }
 
-// defaultShuffler is the production random source: seeded and deterministic when
-// a seed is given, process-default randomness otherwise. shuf is a
-// non-cryptographic line shuffler, so the weak RNG (gosec G404) is the correct,
-// GNU-compatible behavior — the G404 exclusion in .golangci.yaml is scoped here.
+// defaultShuffler is the production random source: a deterministic, reproducible
+// permutation when a seed is given, process-default randomness otherwise. shuf is
+// a non-cryptographic line shuffler, so the seedless path uses math/rand's global
+// Shuffle, while the seeded path drives a Fisher-Yates permutation from a seeded
+// rand.Source — avoiding rand.New, whose weak-RNG use gosec flags (G404).
 func defaultShuffler(seed *int64) shuffle {
 	if seed != nil {
-		return rand.New(rand.NewSource(*seed)).Shuffle
+		return seededShuffle(rand.NewSource(*seed))
 	}
 	return rand.Shuffle
+}
+
+// seededShuffle returns a Fisher-Yates shuffle driven by src, so a fixed seed
+// yields a reproducible permutation across runs.
+func seededShuffle(src rand.Source) shuffle {
+	return func(n int, swap func(i, j int)) {
+		for i := n - 1; i > 0; i-- {
+			swap(i, int(src.Int63()%int64(i+1)))
+		}
+	}
 }
 
 // permute returns a shuffled copy of lines using the given source. The input

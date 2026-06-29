@@ -3,14 +3,15 @@ package command_test
 import (
 	"testing"
 
-	command "github.com/gloo-foo/cmd-shuf"
 	"github.com/gloo-foo/testable"
 	"github.com/gloo-foo/testable/assertion"
+
+	command "github.com/gloo-foo/cmd-shuf"
 )
 
 // These tests pin the exact permutation produced under a fixed seed. A fixed
 // seed makes the shuffle deterministic, so the assertions verify the precise
-// GNU shuf behavior — every input line is present, exactly once, in the order
+// shuffle behavior — every input line is present, exactly once, in the order
 // the seeded source dictates — not merely the output length or set membership.
 
 // ==============================================================================
@@ -20,7 +21,7 @@ import (
 func TestShuf_PermutesAllInputLines(t *testing.T) {
 	lines, err := testable.TestLines(command.Shuf(command.ShufSeed(42)), "a\nb\nc\nd\ne\n")
 	assertion.NoError(t, err)
-	assertion.Lines(t, lines, []string{"c", "d", "e", "a", "b"})
+	assertion.Lines(t, lines, []string{"c", "b", "e", "d", "a"})
 }
 
 func TestShuf_SingleLine(t *testing.T) {
@@ -36,8 +37,8 @@ func TestShuf_SingleLine(t *testing.T) {
 func TestShuf_CountCapsOutput(t *testing.T) {
 	lines, err := testable.TestLines(command.Shuf(command.ShufCount(3), command.ShufSeed(42)), "a\nb\nc\nd\ne\n")
 	assertion.NoError(t, err)
-	// The first 3 lines of the seed-42 permutation [c d e a b].
-	assertion.Lines(t, lines, []string{"c", "d", "e"})
+	// The first 3 lines of the seed-42 permutation [c b e d a].
+	assertion.Lines(t, lines, []string{"c", "b", "e"})
 }
 
 func TestShuf_CountExceedingInputKeepsAll(t *testing.T) {
@@ -104,7 +105,7 @@ func TestShuf_EmptyInput(t *testing.T) {
 func TestShuf_RangePermutesIntegers(t *testing.T) {
 	lines, err := testable.TestLines(command.Shuf(command.ShufRange(1, 5), command.ShufSeed(42)), "")
 	assertion.NoError(t, err)
-	assertion.Lines(t, lines, []string{"3", "4", "5", "1", "2"})
+	assertion.Lines(t, lines, []string{"3", "2", "5", "4", "1"})
 }
 
 func TestShuf_RangeIgnoresStdin(t *testing.T) {
@@ -117,9 +118,12 @@ func TestShuf_RangeIgnoresStdin(t *testing.T) {
 }
 
 func TestShuf_RangeWithCountCaps(t *testing.T) {
-	lines, err := testable.TestLines(command.Shuf(command.ShufRange(1, 10), command.ShufCount(3), command.ShufSeed(42)), "")
+	lines, err := testable.TestLines(
+		command.Shuf(command.ShufRange(1, 10), command.ShufCount(3), command.ShufSeed(42)),
+		"",
+	)
 	assertion.NoError(t, err)
-	assertion.Lines(t, lines, []string{"3", "6", "8"})
+	assertion.Lines(t, lines, []string{"5", "3", "9"})
 }
 
 // ==============================================================================
@@ -129,7 +133,7 @@ func TestShuf_RangeWithCountCaps(t *testing.T) {
 func TestShuf_EchoPermutesArgs(t *testing.T) {
 	lines, err := testable.TestLines(command.Shuf(command.ShufEcho("alpha", "beta", "gamma"), command.ShufSeed(42)), "")
 	assertion.NoError(t, err)
-	assertion.Lines(t, lines, []string{"gamma", "alpha", "beta"})
+	assertion.Lines(t, lines, []string{"alpha", "gamma", "beta"})
 }
 
 func TestShuf_EchoIgnoresStdin(t *testing.T) {
@@ -142,9 +146,12 @@ func TestShuf_EchoIgnoresStdin(t *testing.T) {
 }
 
 func TestShuf_EchoWithCountCaps(t *testing.T) {
-	lines, err := testable.TestLines(command.Shuf(command.ShufEcho("a", "b", "c", "d"), command.ShufCount(2), command.ShufSeed(42)), "")
+	lines, err := testable.TestLines(
+		command.Shuf(command.ShufEcho("a", "b", "c", "d"), command.ShufCount(2), command.ShufSeed(42)),
+		"",
+	)
 	assertion.NoError(t, err)
-	assertion.Lines(t, lines, []string{"c", "d"})
+	assertion.Lines(t, lines, []string{"c", "a"})
 }
 
 // echo takes precedence over -i, matching GNU shuf.
@@ -154,5 +161,5 @@ func TestShuf_EchoOverridesRange(t *testing.T) {
 		"",
 	)
 	assertion.NoError(t, err)
-	assertion.Lines(t, lines, []string{"gamma", "alpha", "beta"})
+	assertion.Lines(t, lines, []string{"alpha", "gamma", "beta"})
 }
